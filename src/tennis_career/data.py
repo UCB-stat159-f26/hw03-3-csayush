@@ -2,10 +2,13 @@ import json
 import re
 
 import pandas as pd
+import requests
 
 MATCH_COLUMNS = {0: "date",1: "tournament",2: "surface",4: "result",
                  11: "opponent",16: "opponent_dob_or_age"}
 DAYS_PER_YEAR = 365.25
+BASE_URL = "https://www.tennisabstract.com/jsmatches"
+REQUEST_TIMEOUT = 10
 
 
 def _format_player_name(player_name):
@@ -68,3 +71,24 @@ def _add_player_age(matches, player_dob):
     matches["player_age"] = _years_between(dob, matches["date"])
     matches["age_diff"] = matches["player_age"] - matches["opponent_age"]
     return matches
+
+
+def _build_js_url(player_name, career_file):
+    if career_file:
+        file_ending = "Career.js"
+    else:
+        file_ending = ".js"
+    return f"{BASE_URL}/{player_name}{file_ending}"
+
+
+def _download_js_file(player_name, career_file):
+    url = _build_js_url(player_name, career_file)
+    try:
+        response = requests.get(url, timeout=REQUEST_TIMEOUT)
+    except requests.RequestException as error:
+        raise ConnectionError("Couldn't connect to tennisabstract.com") from error
+    if response.status_code == 404:
+        raise ValueError(f"No player named '{player_name}' found")
+    if response.status_code >= 400:
+        raise ConnectionError(f"tennisabstract.com returned status {response.status_code}")
+    return response.text

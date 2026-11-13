@@ -1,10 +1,13 @@
 from pathlib import Path
+from types import SimpleNamespace
 
 import pandas as pd
 import pytest
+import requests
 
-from tennis_career.data import (_add_opponent_age,_add_player_age,_build_match_frame,_extract_match_rows,
-                                _extract_player_dob,_format_player_name)
+from tennis_career.data import (_add_opponent_age,_add_player_age,_build_js_url,_build_match_frame,
+                                _download_js_file,_extract_match_rows,_extract_player_dob,
+                                _format_player_name)
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -129,3 +132,48 @@ def test_add_player_age_male():
     matches = _add_player_age(matches, "19860603")
     assert round(matches["player_age"].iloc[0], 2) == 15.27
     assert round(matches["age_diff"].iloc[0], 2) == -6.99
+
+
+@pytest.mark.parametrize(
+    "career_file, expected_ending",
+    [(True, "SerenaWilliamsCareer.js"), (False, "SerenaWilliams.js")],
+)
+def test_build_js_url(career_file, expected_ending):
+    url = _build_js_url("SerenaWilliams", career_file)
+    assert url.endswith(expected_ending)
+
+
+def test_download_js_file_success(monkeypatch):
+    def fake_get(url, timeout):
+        return SimpleNamespace(status_code=200, text="sample JS text")
+
+    monkeypatch.setattr("tennis_career.data.requests.get", fake_get)
+    downloaded_text = _download_js_file("SerenaWilliams", True)
+    assert downloaded_text == "sample JS text"
+
+
+def test_download_js_file_not_found(monkeypatch):
+    def fake_get(url, timeout):
+        return SimpleNamespace(status_code=404, text="")
+
+    monkeypatch.setattr("tennis_career.data.requests.get", fake_get)
+    with pytest.raises(ValueError, match="No player named 'GastonSanchez'"):
+        _download_js_file("GastonSanchez", True)
+
+
+def test_download_js_file_server_error(monkeypatch):
+    def fake_get(url, timeout):
+        return SimpleNamespace(status_code=500, text="")
+
+    monkeypatch.setattr("tennis_career.data.requests.get", fake_get)
+    with pytest.raises(ConnectionError, match="status 500"):
+        _download_js_file("SerenaWilliams", True)
+
+
+def test_download_js_file_connection_error(monkeypatch):
+    def fake_get(url, timeout):
+        raise requests.ConnectionError("network unavailable")
+
+    monkeypatch.setattr("tennis_career.data.requests.get", fake_get)
+    with pytest.raises(ConnectionError, match="Couldn't connect"):
+        _download_js_file("SerenaWilliams", True)
