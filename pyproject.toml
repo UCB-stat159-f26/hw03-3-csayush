@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tennis_career"
+version = "0.1.0"
+description = "Retrieve a tennis player's career matches from tennisabstract.com (given in q) and plot their age versus their opponents' ages."
+requires-python = ">=3.9"
+authors = [{ name = "Ayush Mahale", email = "ayushmahale@berkeley.edu" }]
+dependencies = [
+    "requests",
+    "pandas",
+    "matplotlib",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
