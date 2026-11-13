@@ -5,6 +5,7 @@ import pandas as pd
 
 MATCH_COLUMNS = {0: "date",1: "tournament",2: "surface",4: "result",
                  11: "opponent",16: "opponent_dob_or_age"}
+DAYS_PER_YEAR = 365.25
 
 
 def _format_player_name(player_name):
@@ -37,4 +38,20 @@ def _build_match_frame(rows):
     kept = [[row[position] for position in MATCH_COLUMNS] for row in rows]
     matches = pd.DataFrame(kept, columns=list(MATCH_COLUMNS.values()))
     matches["date"] = pd.to_datetime(matches["date"], format="%Y%m%d")
+    return matches
+
+
+def _years_between(start_dates, end_dates):
+    return (end_dates-start_dates).dt.days/DAYS_PER_YEAR
+
+
+def _add_opponent_age(matches):
+    # because womens files give opponent birth dates but men's give ages
+    matches = matches.copy()
+    raw = matches.pop("opponent_dob_or_age")
+    is_dob = raw.str.fullmatch(r"\d{8}")
+    dob = pd.to_datetime(raw.where(is_dob), format="%Y%m%d", errors="coerce")
+    given_age = pd.to_numeric(raw, errors="coerce")
+    age_from_dob = _years_between(dob, matches["date"])
+    matches["opponent_age"] = age_from_dob.where(is_dob, given_age)
     return matches

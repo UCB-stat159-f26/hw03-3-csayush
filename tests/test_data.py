@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from tennis_career.data import (_build_match_frame,_extract_match_rows,_format_player_name)
+from tennis_career.data import (_add_opponent_age,_build_match_frame,_extract_match_rows,_format_player_name)
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -86,3 +86,21 @@ def test_build_match_frame_male_values():
     assert list(matches["result"]) == ["L", "L", "W"]
     assert matches["opponent"].iloc[2] == "Israel Matos Gil"
     assert matches["opponent_dob_or_age"].iloc[2] == "18.7597535934"
+
+
+def test_add_opponent_age_female():
+    matches = _add_opponent_age(build_fixture_frame("FemalePlayerCareer.js"))
+    assert "opponent_dob_or_age" not in matches.columns
+    assert list(matches["opponent_age"].round(2)) == [18.78, 26.84, 18.43]
+
+
+def test_add_opponent_age_male():
+    matches = _add_opponent_age(build_fixture_frame("MalePlayerCareer.js"))
+    expected = [22.264202601, 24.2902121834, 18.7597535934]
+    assert list(matches["opponent_age"]) == pytest.approx(expected)
+
+
+def test_add_opponent_age_missing_value():
+    matches = build_fixture_frame("MalePlayerCareer.js")
+    matches.loc[0, "opponent_dob_or_age"] = ""
+    assert pd.isna(_add_opponent_age(matches)["opponent_age"].iloc[0])
