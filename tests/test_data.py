@@ -1,8 +1,9 @@
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
-from tennis_career.data import _extract_match_rows, _format_player_name
+from tennis_career.data import (_build_match_frame,_extract_match_rows,_format_player_name)
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -56,3 +57,32 @@ def test_extract_match_rows_male():
 def test_extract_match_rows_no_array():
     with pytest.raises(ValueError):
         _extract_match_rows("var morematchmx = ;")
+
+
+def build_fixture_frame(file_name):
+    return _build_match_frame(_extract_match_rows(read_fixture(file_name)))
+
+
+def test_build_match_frame_columns():
+    matches = build_fixture_frame("FemalePlayerCareer.js")
+    assert list(matches.columns) == ["date", "tournament", "surface", "result", "opponent",
+        "opponent_dob_or_age"]
+    assert len(matches) == 3
+
+
+def test_build_match_frame_female_values():
+    matches = build_fixture_frame("FemalePlayerCareer.js")
+    assert matches["date"].iloc[0] == pd.Timestamp("1995-10-30")
+    assert matches["tournament"].iloc[0] == "Canadian Open"
+    assert list(matches["result"]) == ["L", "L", "L"]
+    assert matches["opponent"].iloc[2] == "Magui Serna"
+    assert matches["opponent_dob_or_age"].iloc[2] == "19790301"
+
+
+def test_build_match_frame_male_values():
+    matches = build_fixture_frame("MalePlayerCareer.js")
+    assert matches["date"].iloc[1] == pd.Timestamp("2001-09-17")
+    assert matches["surface"].iloc[1] == "Clay"
+    assert list(matches["result"]) == ["L", "L", "W"]
+    assert matches["opponent"].iloc[2] == "Israel Matos Gil"
+    assert matches["opponent_dob_or_age"].iloc[2] == "18.7597535934"
