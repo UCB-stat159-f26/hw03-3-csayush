@@ -1,7 +1,10 @@
-"""Download and clean career match data from tennisabstract.com."""
-
 import json
 import re
+
+import pandas as pd
+
+MATCH_COLUMNS = {0: "date",1: "tournament",2: "surface",4: "result",
+                 11: "opponent",16: "opponent_dob_or_age"}
 
 
 def _format_player_name(player_name):
@@ -27,3 +30,11 @@ def _extract_match_rows(js_text):
         raise ValueError("Could not find match data in the career file")
     js_end = end + 1
     return json.loads(js_text[start:js_end])
+
+
+def _build_match_frame(rows):
+    # Keeping only fields in MATCH_COLUMNS and turning date strings into dates
+    kept = [[row[position] for position in MATCH_COLUMNS] for row in rows]
+    matches = pd.DataFrame(kept, columns=list(MATCH_COLUMNS.values()))
+    matches["date"] = pd.to_datetime(matches["date"], format="%Y%m%d")
+    return matches
