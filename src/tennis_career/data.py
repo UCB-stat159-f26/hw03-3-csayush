@@ -1,5 +1,6 @@
 """Download and clean career match data from tennisabstract.com."""
 
+import json
 import re
 
 
@@ -15,3 +16,14 @@ def _format_player_name(player_name):
         raise ValueError("player_name cannot be empty, e.g. 'Serena Williams'")
     pieces = re.split(r"[\s-]+", player_name.strip())
     return "".join(piece[:1].upper() + piece[1:] for piece in pieces)
+
+
+def _extract_match_rows(js_text):
+    #Extracing list of match rows from a career JS file's text
+    start, end = js_text.find("["), js_text.rfind("]")
+    if start == -1:
+        raise ValueError("Could not find match data in the career file")
+    if end < start:
+        raise ValueError("Could not find match data in the career file")
+    js_end = end + 1
+    return json.loads(js_text[start:js_end])
