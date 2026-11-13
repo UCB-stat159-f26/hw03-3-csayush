@@ -9,11 +9,7 @@ DAYS_PER_YEAR = 365.25
 
 
 def _format_player_name(player_name):
-    """Convert a player's name to the format used in tennisabstract URLs.
-
-    Splits on spaces and hyphens, capitalizes the first letter of each
-    piece, and joins them, e.g. "serena williams" -> "SerenaWilliams".
-    """
+    # e.g. "serena williams" -> "SerenaWilliams", the format used in URLs
     if not isinstance(player_name, str):
         raise TypeError("player_name must be a string, e.g. 'Serena Williams'")
     if not player_name.strip():
@@ -54,4 +50,21 @@ def _add_opponent_age(matches):
     given_age = pd.to_numeric(raw, errors="coerce")
     age_from_dob = _years_between(dob, matches["date"])
     matches["opponent_age"] = age_from_dob.where(is_dob, given_age)
+    return matches
+
+
+def _extract_player_dob(js_text):
+    # player's JS file has a line like: var dob=19810926
+    found = re.search(r"var dob\s*=\s*(\d{8})", js_text)
+    if found is None:
+        raise ValueError("Could not find the player's date of birth")
+    return found.group(1)
+
+
+def _add_player_age(matches, player_dob):
+    # negative age_diff means the opponent was older
+    matches = matches.copy()
+    dob = pd.to_datetime(str(player_dob), format="%Y%m%d")
+    matches["player_age"] = _years_between(dob, matches["date"])
+    matches["age_diff"] = matches["player_age"] - matches["opponent_age"]
     return matches
