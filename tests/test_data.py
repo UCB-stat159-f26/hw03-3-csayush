@@ -3,7 +3,8 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from tennis_career.data import (_add_opponent_age,_build_match_frame,_extract_match_rows,_format_player_name)
+from tennis_career.data import (_add_opponent_age,_add_player_age,_build_match_frame,_extract_match_rows,
+                                _extract_player_dob,_format_player_name)
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -104,3 +105,27 @@ def test_add_opponent_age_missing_value():
     matches = build_fixture_frame("MalePlayerCareer.js")
     matches.loc[0, "opponent_dob_or_age"] = ""
     assert pd.isna(_add_opponent_age(matches)["opponent_age"].iloc[0])
+
+
+def test_extract_player_dob():
+    js_text = "var fullname = 'Serena Williams'\nvar dob=19810926\nvar ht=175\n"
+    assert _extract_player_dob(js_text) == "19810926"
+
+
+def test_extract_player_dob_missing():
+    with pytest.raises(ValueError):
+        _extract_player_dob("var fullname = 'Serena Williams'\n")
+
+
+def test_add_player_age_female():
+    matches = _add_opponent_age(build_fixture_frame("FemalePlayerCareer.js"))
+    matches = _add_player_age(matches, "19810926")
+    assert round(matches["player_age"].iloc[0], 2) == 14.09
+    assert round(matches["age_diff"].iloc[0], 2) == -4.68
+
+
+def test_add_player_age_male():
+    matches = _add_opponent_age(build_fixture_frame("MalePlayerCareer.js"))
+    matches = _add_player_age(matches, "19860603")
+    assert round(matches["player_age"].iloc[0], 2) == 15.27
+    assert round(matches["age_diff"].iloc[0], 2) == -6.99
