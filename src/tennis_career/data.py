@@ -4,8 +4,7 @@ import re
 import pandas as pd
 import requests
 
-MATCH_COLUMNS = {0: "date",1: "tournament",2: "surface",4: "result",
-                 11: "opponent",16: "opponent_dob_or_age"}
+MATCH_COLUMNS = {0: "date",1: "tournament",2: "surface",4: "result",11: "opponent",16: "opponent_dob_or_age"}
 DAYS_PER_YEAR = 365.25
 BASE_URL = "https://www.tennisabstract.com/jsmatches"
 REQUEST_TIMEOUT = 10
@@ -92,3 +91,16 @@ def _download_js_file(player_name, career_file):
     if response.status_code >= 400:
         raise ConnectionError(f"tennisabstract.com returned status {response.status_code}")
     return response.text
+
+
+def get_career_data(player_name):
+    # getting career matches for one player
+    formatted_name = _format_player_name(player_name)
+    career_text = _download_js_file(formatted_name, True)
+    player_text = _download_js_file(formatted_name, False)
+    rows = _extract_match_rows(career_text)
+    matches = _build_match_frame(rows)
+    matches = _add_opponent_age(matches)
+    player_dob = _extract_player_dob(player_text)
+    matches = _add_player_age(matches, player_dob)
+    return matches
