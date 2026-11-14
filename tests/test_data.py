@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 import requests
 
+from tennis_career import get_career_data
 from tennis_career.data import (_add_opponent_age,_add_player_age,_build_js_url,_build_match_frame,
                                 _download_js_file,_extract_match_rows,_extract_player_dob,
                                 _format_player_name)
@@ -177,3 +178,45 @@ def test_download_js_file_connection_error(monkeypatch):
     monkeypatch.setattr("tennis_career.data.requests.get", fake_get)
     with pytest.raises(ConnectionError, match="Couldn't connect"):
         _download_js_file("SerenaWilliams", True)
+
+
+def use_mock_downloads(monkeypatch, career_fixture, player_dob):
+    def fake_download(player_name, career_file):
+        if career_file:
+            return read_fixture(career_fixture)
+        return f"var dob={player_dob}"
+
+    monkeypatch.setattr("tennis_career.data._download_js_file", fake_download)
+
+
+def test_get_career_data_female(monkeypatch):
+    use_mock_downloads(monkeypatch, "FemalePlayerCareer.js", "19810926")
+    matches = get_career_data("serena williams")
+    assert list(matches.columns) == [
+        "date", "tournament", "surface", "result", "opponent",
+        "opponent_age", "player_age", "age_diff",
+    ]
+    assert len(matches) == 3
+    assert round(matches["opponent_age"].iloc[0], 2) == 18.78
+    assert round(matches["player_age"].iloc[0], 2) == 14.09
+
+
+def test_get_career_data_male(monkeypatch):
+    use_mock_downloads(monkeypatch, "MalePlayerCareer.js", "19860603")
+    matches = get_career_data("Rafael Nadal")
+    assert len(matches) == 3
+    assert round(matches["opponent_age"].iloc[0], 2) == 22.26
+    assert round(matches["age_diff"].iloc[0], 2) == -6.99
+
+
+def test_get_career_data_invalid_player(monkeypatch):
+    requested_names = []
+
+    def fake_download(player_name, career_file):
+        requested_names.append(player_name)
+        raise ValueError(f"No player named '{player_name}' found")
+
+    monkeypatch.setattr("tennis_career.data._download_js_file", fake_download)
+    with pytest.raises(ValueError, match="No player named 'GastonSanchez'"):
+        get_career_data("Gaston Sanchez")
+    assert requested_names == ["GastonSanchez"]
