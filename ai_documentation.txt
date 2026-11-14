@@ -1,0 +1,26 @@
+AI Tool Used: ChatGPT (GPT-5.6 Sol)
+
+Prompts and outputs:
+
+1. 
+Prompt: when I do git checkout isnt switching branches, what's the issue?
+Output: Git would not switch branches because src/tennis_career/data.py still had an uncommitted change.
+That edit was only formatting, so it was stashed, main was updated, the new branch was created, and the stash was restored as an unstaged change. 
+The formatting change was not lost.
+
+2. 
+Prompt: Why can't I see the serena plot? Can you run my script and generate it?
+Output: The plot opens with no picture. plot_age_gap() returns the Matplotlib axes and does not save a file. 
+Save it yourself with axes.figure.savefig("serena_check.png"). That picture is only a local check. Do not commit it.
+
+3.
+Prompt: Can you double check the serena plot I just generated? I think the axes are messed up.
+Output: You're right Serena's plot looks wrong. The x-axis should run from about age 14 to 41. 
+The y-axis should be the player's age minus the opponent's age. Green points are wins, red points are losses, and the gray line is zero. 
+A negative value means the opponent was older.
+
+4.
+
+Prompt: Can you check if the data for Nadal is correct? I think it might be dropping 2016 and onwards.
+Output: Nadal's data stops at 2016. The career file on tennisabstract.com ends there. 
+The function is reading the file the assignment specifies. It is not dropping later matches.
