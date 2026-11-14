@@ -5,7 +5,8 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "tennis_career"
 version = "0.1.0"
-description = "Retrieve a tennis player's career matches from tennisabstract.com (given in q) and plot their age versus their opponents' ages."
+description = "Retrieve a tennis player's career matches from tennisabstract.com and plot their age versus their opponents' ages."
+readme = "README.md"
 requires-python = ">=3.9"
 authors = [{ name = "Ayush Mahale", email = "ayushmahale@berkeley.edu" }]
 dependencies = [
